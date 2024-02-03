@@ -1,19 +1,23 @@
+type LinkTemplateProps = {
+  permalink: string,
+  alias: string
+}
+
+function defaultLinkTemplate ({ permalink, alias }: LinkTemplateProps): any {
+  return {
+    hName: 'a',
+    hProperties: { href: permalink },
+    hChildren: [{ type: 'text', value: alias }]
+  }
+}
+
 interface FromMarkdownOptions {
-  permalinks?: string[];
-  pageResolver?: (name: string) => string[];
-  newClassName?: string;
-  wikiLinkClassName?: string;
-  hrefTemplate?: (permalink: string) => string;
+  linkResolver?: (x: string) => string
+  linkTemplate?: typeof defaultLinkTemplate
 }
 
 function fromMarkdown (opts: FromMarkdownOptions = {}) {
-  const permalinks = opts.permalinks || []
-  const defaultPageResolver = (name: string) => [name.replace(/ /g, '_').toLowerCase()]
-  const pageResolver = opts.pageResolver || defaultPageResolver
-  const newClassName = opts.newClassName || 'new'
-  const wikiLinkClassName = opts.wikiLinkClassName || 'internal'
-  const defaultHrefTemplate = (permalink: string) => `#/page/${permalink}`
-  const hrefTemplate = opts.hrefTemplate || defaultHrefTemplate
+  const linkTemplate = opts.linkTemplate || defaultLinkTemplate
   let node: any
 
   function enterWikiLink (this: any, token: any) {
@@ -22,8 +26,7 @@ function fromMarkdown (opts: FromMarkdownOptions = {}) {
       value: null,
       data: {
         alias: null,
-        permalink: null,
-        exists: null
+        permalink: null
       }
     }
     this.enter(node, token)
@@ -49,40 +52,18 @@ function fromMarkdown (opts: FromMarkdownOptions = {}) {
     this.exit(token)
     const wikiLink = node
 
-    const pagePermalinks = pageResolver(wikiLink.value)
-    const target = pagePermalinks.find(p => permalinks.indexOf(p) !== -1)
-    const exists = target !== undefined
-
-    let permalink: string
-    if (exists) {
-      permalink = target
-    } else {
-      permalink = pagePermalinks[0] || ''
+    const data = {
+      permalink: opts.linkResolver
+        ? opts.linkResolver(wikiLink.value)
+        : wikiLink.value,
+      alias: wikiLink.data.alias || wikiLink.value
     }
 
-    let displayName = wikiLink.value
-    if (wikiLink.data.alias) {
-      displayName = wikiLink.data.alias
+    wikiLink.data = {
+      ...wikiLink.data,
+      ...data,
+      ...linkTemplate(data)
     }
-
-    let classNames = wikiLinkClassName
-    if (!exists) {
-      classNames += ' ' + newClassName
-    }
-
-    wikiLink.data.alias = displayName
-    wikiLink.data.permalink = permalink
-    wikiLink.data.exists = exists
-
-    wikiLink.data.hName = 'a'
-    wikiLink.data.hProperties = {
-      className: classNames,
-      href: hrefTemplate(permalink)
-    }
-    wikiLink.data.hChildren = [{
-      type: 'text',
-      value: displayName
-    }]
   }
 
   return {

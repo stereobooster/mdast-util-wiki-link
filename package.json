@@ -1,5 +1,5 @@
 {
-  "name": "mdast-util-wiki-link",
+  "name": "@stereobooster/mdast-util-wiki-link",
   "version": "0.1.2",
   "description": "Parse and render wiki-style links",
   "keywords": [
@@ -17,7 +17,7 @@
     "email": "me@markhudnall.com",
     "url": "https://markhudnall.com"
   },
-  "repository": "https://github.com/landakram/mdast-util-wiki-link",
+  "repository": "https://github.com/stereobooster/mdast-util-wiki-link",
   "license": "MIT",
   "type": "module",
   "types": "./dist/index.d.ts",
