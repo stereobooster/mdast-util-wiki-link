@@ -25,8 +25,8 @@ interface WikiLinkNode extends Node {
   data: WikiLinkData;
 }
 
-function assertWikiLink(obj: Node): asserts obj is WikiLinkNode {
-  if (!obj.data || obj.data.permalink === undefined) {
+function assertWikiLink (obj: Node): asserts obj is WikiLinkNode {
+  if (!obj.data || !('alias' in obj.data) || !('permalink' in obj.data)) {
     throw new Error('Not a wiki link')
   }
 }
@@ -43,7 +43,7 @@ describe('mdast-util-wiki-link', () => {
 
       visit(ast, 'wikiLink', (node: Node) => {
         assertWikiLink(node)
-        assert.equal(node.data.permalink, 'Wiki Link')
+        assert.equal(node.data.permalink, undefined)
         assert.equal(node.data.hName, 'a')
         assert.equal(node.data.hProperties.href, 'Wiki Link')
         assert.equal(node.data.hChildren[0].value, 'Wiki Link')
@@ -60,8 +60,8 @@ describe('mdast-util-wiki-link', () => {
 
       visit(ast, 'wikiLink', (node: Node) => {
         assertWikiLink(node)
-        assert.equal(node.data.permalink, 'Real Page')
         assert.equal(node.data.alias, 'Page Alias')
+        assert.equal(node.data.permalink, undefined)
         assert.equal(node.value, 'Real Page')
         assert.equal(node.data.hName, 'a')
         assert.equal(node.data.hProperties.href, 'Real Page')
@@ -92,10 +92,10 @@ describe('mdast-util-wiki-link', () => {
           extensions: [syntax()],
           mdastExtensions: [
             wikiLink.fromMarkdown({
-              linkTemplate: ({ permalink, alias }) => ({
+              linkTemplate: ({ slug, permalink, alias }) => ({
                 hName: 'span',
-                hProperties: { 'data-href': permalink },
-                hChildren: [{ type: 'text', value: alias }]
+                hProperties: { 'data-href': permalink || slug },
+                hChildren: [{ type: 'text', value: alias || slug }]
               })
             })
           ]
@@ -136,6 +136,19 @@ describe('mdast-util-wiki-link', () => {
       const stringified = toMarkdown(ast, { extensions: [wikiLink.toMarkdown()] }).trim()
 
       assert.equal(stringified, '[[Real Page:Page Alias]]')
+    })
+
+    test('stringifies aliased wiki links when alias is the same as slug', () => {
+      const ast = fromMarkdown('[[Real Page:Real Page]]', {
+        extensions: [syntax()],
+        mdastExtensions: [
+          wikiLink.fromMarkdown()
+        ]
+      })
+
+      const stringified = toMarkdown(ast, { extensions: [wikiLink.toMarkdown()] }).trim()
+
+      assert.equal(stringified, '[[Real Page:Real Page]]')
     })
 
     describe('configuration options', () => {

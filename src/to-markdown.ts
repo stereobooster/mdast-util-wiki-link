@@ -22,10 +22,10 @@ function toMarkdown (opts: ToMarkdownOptions = {}) {
     const exit = context.enter('wikiLink')
 
     const nodeValue = safe(context, node.value, { before: '[', after: ']' })
-    const nodeAlias = safe(context, node.data.alias, { before: '[', after: ']' })
 
     let value
-    if (nodeAlias !== nodeValue) {
+    if (node.data.alias != null) {
+      const nodeAlias = safe(context, node.data.alias, { before: '[', after: ']' })
       value = `[[${nodeValue}${aliasDivider}${nodeAlias}]]`
     } else {
       value = `[[${nodeValue}]]`

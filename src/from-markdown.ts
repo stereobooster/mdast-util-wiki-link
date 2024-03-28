@@ -1,13 +1,14 @@
 type LinkTemplateProps = {
-  permalink: string,
-  alias: string
+  slug: string,
+  permalink?: string,
+  alias?: string
 }
 
-function defaultLinkTemplate ({ permalink, alias }: LinkTemplateProps): any {
+function defaultLinkTemplate ({ slug, permalink, alias }: LinkTemplateProps): any {
   return {
     hName: 'a',
-    hProperties: { href: permalink },
-    hChildren: [{ type: 'text', value: alias }]
+    hProperties: { href: permalink == null ? slug : permalink },
+    hChildren: [{ type: 'text', value: alias == null ? slug : alias }]
   }
 }
 
@@ -25,8 +26,8 @@ function fromMarkdown (opts: FromMarkdownOptions = {}) {
       type: 'wikiLink',
       value: null,
       data: {
-        alias: null,
-        permalink: null
+        // alias: null,
+        // permalink: null
       }
     }
     this.enter(node, token)
@@ -53,15 +54,17 @@ function fromMarkdown (opts: FromMarkdownOptions = {}) {
     const wikiLink = node
 
     const data = {
+      slug: wikiLink.value,
+      alias: wikiLink.data.alias,
       permalink: opts.linkResolver
         ? opts.linkResolver(wikiLink.value)
-        : wikiLink.value,
-      alias: wikiLink.data.alias || wikiLink.value
+        : undefined
     }
 
     wikiLink.data = {
-      ...wikiLink.data,
-      ...data,
+      // ...wikiLink.data,
+      alias: data.alias,
+      permalink: data.permalink,
       ...linkTemplate(data)
     }
   }
